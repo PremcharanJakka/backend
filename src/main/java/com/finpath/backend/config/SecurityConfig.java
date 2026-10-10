@@ -27,97 +27,57 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http
-    ) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http)
+            throws Exception {
 
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
             .csrf(csrf -> csrf.disable())
-
             .sessionManagement(session ->
-                session.sessionCreationPolicy(
-                    SessionCreationPolicy.STATELESS
-                )
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-
             .authorizeHttpRequests(auth -> auth
-
-                // CORS preflight
-                .requestMatchers(HttpMethod.OPTIONS, "/**")
-                .permitAll()
-
-                // Public authentication endpoints
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(
                     "/api/auth/register",
                     "/api/auth/login",
                     "/api/auth/forgot-password",
                     "/api/health"
-                )
-                .permitAll()
-
-                // Everything else requires JWT
-                .anyRequest()
-                .authenticated()
+                ).permitAll()
+                .anyRequest().authenticated()
             )
-
-            .addFilterBefore(
-                jwtAuthFilter,
-                UsernamePasswordAuthenticationFilter.class
-            );
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
 
-        CorsConfiguration configuration =
-            new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of(
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "https://frontend-fin-path2.vercel.app"
+        ));
 
-        configuration.setAllowedOrigins(
-            List.of(
-                "http://localhost:5173",
-                "http://127.0.0.1:5173"
-            )
-        );
+        configuration.setAllowedMethods(List.of(
+            "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
+        ));
 
-        configuration.setAllowedMethods(
-            List.of(
-                "GET",
-                "POST",
-                "PUT",
-                "PATCH",
-                "DELETE",
-                "OPTIONS"
-            )
-        );
+        configuration.setAllowedHeaders(List.of(
+            "Authorization",
+            "Content-Type",
+            "Accept",
+            "Origin",
+            "X-Requested-With"
+        ));
 
-        configuration.setAllowedHeaders(
-            List.of(
-                "Authorization",
-                "Content-Type",
-                "Accept",
-                "Origin",
-                "X-Requested-With"
-            )
-        );
-
-        configuration.setExposedHeaders(
-            List.of("Authorization")
-        );
-
+        configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source =
-            new UrlBasedCorsConfigurationSource();
-
-        source.registerCorsConfiguration(
-            "/**",
-            configuration
-        );
-
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
